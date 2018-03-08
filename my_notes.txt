@@ -1,0 +1,134 @@
+1.       Using the virtualization tooling of your choice, provide code that creates (and destroys) two Linux virtual machines, named mysql1.local and backup1.local. The virtual machines must run on a developer workstation and not require cloud hosting services.
+2.       Implement Ansible code that installs, configures and starts mysql on mysql1.local.
+3.       Implement Ansible code that schedules a nightly backup of the mysql data files on mysql1.local. The backup data files must ultimately be stored on backup1.local. Assume there is adequate disk space on both virtual machines to perform this backup.
+4.       Provide one or more test cases to verify the backup.
+5.       As a bonus, automated one or more test cases.
+
+
+
+
+-use Vagrant with multimachine enviroment (one Vagrantfile for 2 boxes)
+-create playbook for
+
+
+Note: By default, Vagrant will try to automatically install Ansible if it is not yet present on the guest machine (see the install option below for more details).
+
+vagrant up 
+vagrant destroy -f
+
+# Install Virtualbox
+# Add centos box for Vagrant
+vagrant box add --provider virtualbox centos/7
+
+add sshkeys
+update /etc/hosts
+
+
+
+	- name: create mysql database
+  mysql_db: name={{mysql.db}} state=present
+
+   -name: Schedule backup
+    cron: name="Backup Mysql" minute="0" hour="1" job:"mysqldump....."
+
+
+
+Peters-MacBook-Pro:enviroment brzo$ cat roles/setup/files/hosts.j2
+127.0.0.1	{{ db_hostname }} {{ db_hostname_short}}
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+{{ db_ip }}  {{ db_hostname }} {{ db_hostname_short}}
+{{ backup_ip }}  {{ backup_hostname }} {{ backup_hostname_short}}
+
+
+
+"ansible_hostname": "mysql1",
+
+sudo lsof -iTCP -sTCP:LISTEN -P -n
+
+
+ansible-playbook  -u vagrant --private-key id_rsa db.yml
+
+
+
+
+- name: create dbadmin user
+  mysql_user: name={{mysql.user}} password={{mysql.password}} priv={{mysql.privileges}} host={{mysql.host}} state=present
+  tags:
+  - mysql
+  - mysql-user
+
+- name: create dbadmin  user
+  mysql_user: name={{mysql.user}} password={{mysql.password}} priv={{mysql.privileges}} host=localhost state=present
+  tags:
+  - mysql
+  - mysql-user
+
+
+
+
+
+/usr/bin/rsync --delay-updates -F --compress --archive --rsh=/usr/bin/ssh -S none -i /vagrant/.ssh/id_rsa -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null --rsync-path=sudo rsync -i /vagrant/.ssh/id_rsa  /root/.my.cnf vagrant@backup.local:/root/.my.cnf
+
+
+/usr/bin/rsync -aqe "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /home/vagrant/.ssh/id_rsa"  --rsync-path="sudo rsync" -i /home/vagrant/.ssh/id_rsa  /root/.my.cnf vagrant@backup.local:/root/
+
+sudo /usr/bin/rsync -ave 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i /home/vagrant/.ssh/id_rsa'  --rsync-path='sudo rsync'   /root/.my.cnf vagrant@backup.local:/root/
+
+root@mysql1 ~]# ls -la /root/.my.cnf
+-rw-r--r--. 1 root root 42 Mar  4 04:31 /root/.my.cnf
+
+
+- name: copy id_rsa to  to enable acccess to backup server
+  copy: src=id_rsa dest=/home/vagrant/.ssh/id_rsa owner=vagrant group=vagrant mode=600
+
+
+
+/usr/bin/rsync -ave "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" /backup/ backup.local:/mysql/xtrabackup-201803040951/
+
+
+
+http://ermaker.github.io/blog/2015/11/18/change-insecure-key-to-my-own-key-on-vagrant.html
+
+
+https://unix.stackexchange.com/questions/123189/cronjob-for-automatic-db-backup-to-date-prefixed-file
+
+https://stackoverflow.com/questions/2482491/is-copying-var-lib-mysql-a-good-alterntive-to-mysqldump
+
+
+use test-db;
+CREATE TABLE products (SerialNo INT, Name VARCHAR(20), Brand VARCHAR(20), Price INT);
+INSERT INTO  products VALUES ('1', 'Radio', 'Sony', '150');
+
+
+
+
+
+# make backup
+innobackupex --user dbadmin --password foobar --no-timestamp /backup
+
+# prepare backup
+innobackupex --apply-log /backup/2018-03-04_07-46-20/
+
+# copy to backup server
+rsync 
+
+# restore
+sudo systemctl stop mariadb
+innobackupex  --force-non-empty-directories --copy-back <archive>
+sudo chown -R mysql: /var/lib/mysql
+sudo systemctl start mariadb
+
+- name: accept new ssh fingerprints (run only once as it will fill known_hosts)
+  shell: "ssh-keyscan -H  mysql1.local  >> ~/.ssh/known_hosts"
+
+
+- name: Restore from archive 
+    shell: "innobackupex  --force-non-empty-directories --copy-back <dirname>;chown -R mysql: /var/lib/mysql"
+
+
+
+
+
+
+

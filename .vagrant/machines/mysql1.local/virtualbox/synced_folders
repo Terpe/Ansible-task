@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"type":"rsync","guestpath":"/vagrant","hostpath":"/Users/brzo/Documents/GlobalRelay/GRtask/enviroment_clean","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}

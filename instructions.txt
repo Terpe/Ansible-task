@@ -1,0 +1,21 @@
+## instructions.txt
+
+
+
+
+Requirements: Installed Virtualbox or other Vagrant provisioner, Vagrant, Ansible on local machine
+commands to run:
+# run the enviroment
+
+tar -xzvf task.tar.gz 
+vagrant up 
+
+# tear down the enviroment
+vagrant destroy -f
+
+Both centos VMs mysql1.local and backup1.local are specified in Vagrantfile and provisioned from virtualbox provider via Vagrant.
+Vagrant calls ansible provisioner to trigger respective playbooks in which roles setup, db and backup are present.
+Role db installs mariadb centos7 default mysql server, and configures Percona xtrabackup via cronjob which prepares mysql datafiles and copies archive directory content to VM backup.local via rsync. Additionaly on VM backup.local is configured mysqldump cronjob which performs logical backup of mysql running mysql1.
+4. step providing test case for backup verification because of time issues. 
+My idea for the automating the test case verification would be to with help of ansible to provision mysql server on backup.local and restore datafiles from archive to /var/lib/mysql backup.local and verify database and tables. This is implemented in playbook verify-backup.yml. 
+
